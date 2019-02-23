@@ -5,13 +5,13 @@ A week or so ago I completed a small project to build a container using the buil
 * This playbook has been tested with a current basic install of **CentOS** (CentOS Linux release 7.6.1810 (Core)) and **Fedora** (Fedora release 29 (Twenty Nine))
 
 ### Basic usage
-1.  Install ansible
-1.  Download the playbook and associated files
+1.  Clone the repository and cd in to the my-certbot directory
 1.  Set the variables in **my_certbot_vars.yml**
+1. If you are running on localhost change the hosts variable at the top of the **my_certbot_setup.yml** playbook from **all** to **localhost** otherwise use a suitable inventory file.
 1.  Run the **my_certbot_setup.yml** playbook
-1.  Run the **buildit.sh** script found in the directory set by the **container_control** variable in the **my_certbot_vars.yml** file
-1.  run the **run-certbot.sh** script found in the directory set by the **container_control** variable in the **my_certbot_vars.yml** file
-1.  collect your certificates from the **letsencrypt/archive/<domain_name>** directory found in the directory set buy the **certbot_working variable** in the **my_certbot_vars.yml** file
+1.  On the tarhget host, run the **buildit.sh** script found in the directory set by the **container_control** variable in the **my_certbot_vars.yml** file
+1.  On the target host, run the **run-certbot.sh** script found in the directory set by the **container_control** variable in the **my_certbot_vars.yml** file
+1.  Collect your certificates from the **letsencrypt/archive/<domain_name>** directory found in the directory set buy the **certbot_working variable** in the **my_certbot_vars.yml** file
 
 ### **my_certbot_vars.yml** file in a bit more detail.
 
