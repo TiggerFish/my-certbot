@@ -1,0 +1,46 @@
+---
+
+# Location on the local machine for the output from certbot
+# Will be created if it doesn't exist will be owned by the certbot user
+certbot_working: "/dingdong/doodaas"
+
+# Location on the local machine for the build & run container scripts.
+# must be run by the root user (for now).
+container_control: "/root/certbot"
+
+# Firewall config. If update_firewall is set to false no firewall changes made
+# loclan should be set to the IP address or netowrk that ssh should be restriced to
+update_firewall: false
+loclan: ['10.0.0.0/8', '192.168.0.0/16', '172.16.0.0/12']
+
+# Certbot ini settings
+# See this url for more detail https://certbot.eff.org/docs/using.html#configuration-file
+# Size of the RSA key
+rsa_key_size: "4096"
+# Email used for registration with letsencrypt and recovery contact.
+email: "foo@bar.com"
+# Don't share your e-mail address with EFF
+no_eff_email: true
+# Agree to the ACME Subscriber Agreement
+agree_tos: true
+# ACME Directory Resource URI. Use staging for testing
+le_server: "https://acme-staging-v02.api.letsencrypt.org/directory"
+
+# AWS API config
+aws_used: false
+aws_access_key_id: XXXXXXXXXXXXXXXXXXXX
+aws_secret_access_key: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+aws_domains: ['-d "*.foo.com" -d foo.com']
+
+# Webroot config
+web_root_used: false
+web_root_domains: ['-d www.bar.com -d bar.com', '-d www.foo.com -d foo.com']
+
+
+
+
+
+
+
+
+

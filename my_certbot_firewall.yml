@@ -1,0 +1,67 @@
+---
+#Firewall play, only runs when update_firewall: set to true in my_certbot_vars.yml
+# Install stuff
+  # Centos
+- name: CentOS Install iptables-services
+  yum:
+    name: ['iptables-services']
+    state: present
+  when: ansible_distribution == 'CentOS'
+  # Fedora
+- name: Fedora Install iptables-services
+  dnf:
+    name: ['iptables-services']
+    state: present
+  when: ansible_distribution == 'Fedora'
+
+# Firewall stuff
+- name: Stop & disable firewalld
+  service: 
+    name: firewalld
+    state: stopped
+    enabled: no
+  when: setvar.update_firewall
+
+- name: start and and enable iptables
+  service:
+    name: iptables
+    state: started
+    enabled: yes
+
+- name: Flush existing firewall rules....Could do better
+  iptables:
+    flush: true
+
+- name: Allow related and established connections
+  iptables:
+    chain: INPUT
+    ctstate: ESTABLISHED,RELATED
+    jump: ACCEPT
+    comment: ansible related and established
+#Inbound rules
+- name: Inbound rules
+  iptables:
+    chain: INPUT
+    ctstate: NEW
+    source: '{{item.src}}'
+    destination_port: '{{item.dp}}'
+    protocol: tcp
+    jump: ACCEPT
+    comment: ansible FW public Inbound Allow
+  with_items:
+    - { src: '0.0.0.0/0', dp: '80' }
+    - { src: '0.0.0.0/0', dp: '443' }
+
+- name: Inbound rules
+  iptables:
+    chain: INPUT
+    ctstate: NEW
+    source: '{{item[0]}}'
+    destination_port: '{{item[1]}}'
+    protocol: tcp
+    jump: ACCEPT
+    comment: ansible FW local lan Inbound Allow
+  with_nested:
+    - '{{setvar.loclan}}'
+    - ['22']
+

@@ -1,0 +1,128 @@
+---
+- hosts: all
+  become: yes
+  tasks:
+  - name: include variable files
+    include_vars:
+      file: my_certbot_vars.yml
+      name: setvar
+# Install stuff
+  # Centos
+  - name: CentOS Install podman, buildah, and epel-release
+    yum:
+      name: ['podman', 'buildah', 'epel-release']
+      state: present
+    when: ansible_distribution == 'CentOS'
+  # Fedora
+  - name: Fedora Install podman and buildah
+    dnf:
+      name: ['podman', 'buildah']
+      state: present
+    when: ansible_distribution == 'Fedora'
+
+# Firewall stuff
+  - name: Include Firewall Tasks
+    include_tasks: my_certbot_firewall.yml
+    when: setvar.update_firewall
+
+# Group add
+  - name: Ensure certbot group exists
+    group:
+      name: certbot
+      state: present
+      gid: 2000
+# User add
+  - name: Add the user 'certbot' with a specific uid and a primary group of 'certbot'
+    user:
+      name: certbot
+      uid: 2000
+      group: certbot
+# Set up directories
+  - name: set up directories
+    file:
+      path: '{{item.dst}}'
+      state: directory
+      mode: 0700
+      owner: '{{item.own}}'
+      group: '{{item.own}}'
+    with_items:
+      - { dst: '{{setvar.certbot_working}}/letsencrypt', own: 'certbot' }
+      - { dst: '{{setvar.certbot_working}}/letsencrypt-logs', own: 'certbot' }
+      - { dst: '{{setvar.certbot_working}}/letsencrypt-work', own: 'certbot' }
+      - { dst: '{{setvar.certbot_working}}/.aws', own: 'certbot' }
+      - { dst: '{{setvar.certbot_working}}/.config/letsencrypt', own: 'certbot' }
+      - { dst: '{{setvar.container_control}}', own: 'root' }
+
+#Set certbot cli.ini
+  - name: set certbot cli.ini
+    lineinfile:
+      path: "{{setvar.certbot_working}}/.config/letsencrypt/cli.ini"
+      state: "{{ 'present' if item.yn else 'absent' }}"
+      create: yes
+      mode: 0400
+      owner: certbot
+      group: certbot     
+      regexp: '{{item.exp}}'
+      line: '{{item.line}}'
+    with_items:
+      - { exp: '^rsa-key-size', line: 'rsa-key-size = {{setvar.rsa_key_size}}', yn: true}
+      - { exp: '^email', line: 'email = {{setvar.email}}', yn: true }
+      - { exp: '^server', line: 'server = {{setvar.le_server}}', yn: true }
+      - { exp: '^config-dir', line: 'config-dir = /home/certbot/letsencrypt', yn: true }
+      - { exp: '^logs-dir', line: 'logs-dir = /home/certbot/letsencrypt-logs', yn: true }
+      - { exp: '^work-dir', line: 'work-dir = /home/certbot/letsencrypt-work', yn: true }
+      - { exp: '^no-eff-email', line: 'no-eff-email', yn: '{{setvar.no_eff_email}}' }
+      - { exp: '^agree-tos', line: 'agree-tos', yn: '{{setvar.agree_tos}}' }
+
+#Set AWS credentials if required
+  - name: Set AWS credentials if required
+    template:
+      src: aws_credentials.j2
+      dest: "{{setvar.certbot_working}}/.aws/credentials"
+      mode: 0400
+      owner: certbot
+      group: certbot
+    when:
+      setvar.aws_used
+
+# run script for certbot
+  - name: Create certbot run script
+    template:
+      src: certbot-runit.sh.j2
+      dest: "{{setvar.certbot_working}}/runit.sh"
+      mode: 0700
+      owner: certbot
+      group: certbot
+
+# build script for container
+  - name: copy the build script
+    copy:
+      src: '{{item.src}}'
+      dest: "{{setvar.container_control}}/buildit.sh"
+      mode: 0700
+      owner: root
+      group: root
+    when: item.yn
+    with_items:
+      - { src: 'centos-buildit.sh', yn: '{{ansible_distribution == "CentOS"}}'}
+      - { src: 'fedora-buildit.sh', yn: '{{ansible_distribution == "Fedora"}}'}
+
+# run certbot script
+  - name: copy the run certbot script
+    template:
+      src: run-certbot.sh.j2
+      dest: "{{setvar.container_control}}/run-certbot.sh"
+      mode: 0700
+      owner: root
+      group: root
+
+
+
+
+     
+
+
+
+
+
+

@@ -1,0 +1,13 @@
+#!/bin/bash
+sudo /usr/sbin/httpd -D FOREGROUND &
+sleep 10
+{% if setvar.web_root_used %}
+{% for item in setvar.web_root_domains %}
+certbot certonly --webroot -w /var/www/html {{ item }}
+{% endfor %}
+{% endif %}
+{% if setvar.aws_used %}
+{% for item in setvar.aws_domains %}
+certbot certonly --dns-route53 {{ item }}
+{% endfor %}
+{% endif %}

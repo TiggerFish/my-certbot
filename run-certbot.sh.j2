@@ -1,0 +1,12 @@
+#!/bin/bash
+if systemctl is-active httpd;then
+  systemctl stop httpd
+fi
+echo "running image"
+podman run -p 80:80 -p 443:443 -v {{setvar.certbot_working}}/:/home/certbot:Z localhost/my-certbot:latest
+if systemctl is-enabled httpd;then
+  systemctl start httpd
+fi
+for ims in $(podman ps -a | grep -v CONTAINER | awk '{ print $1 }'); do podman rm $ims;done
+podman rmi localhost/my-certbot:latest
+echo "all done"
